@@ -5,29 +5,43 @@ OBJDIR=obj
 BINDIR=bin
 INC_DIR=include
 
-SRCFILES = y86-parser
-SRCFILES_TSRC = $(addsuffix .c, $(SRCFILES))
-SRCFILES_SRC = $(addprefix $(SRC)/, $(SRCFILES_TSRC))
+P_SRCFILES = y86-parser
+P_SRCFILES_TSRC = $(addsuffix .c, $(P_SRCFILES))
+P_SRCFILES_SRC = $(addprefix $(SRC)/parser, $(P_SRCFILES_TSRC))
+P_OBJDIR = $(OBJDIR)/parser
 
-SRCFILES_TOBJ = $(addsuffix .o, $(SRCFILES))
-SRCFILES_OBJ = $(addprefix $(OBJDIR)/, $(SRCFILES_TOBJ))
+S_SRCFILES = y86-sim
+S_SRCFILES_TSRC = $(addsuffix .c, $(S_SRCFILES))
+S_SRCFILES_SRC = $(addprefix $(SRC)/simulator, $(S_SRCFILES_TSRC))
+S_OBJDIR = $(OBJDIR)/simulator
 
-DEP = $(SRCFILES_OBJ:.o=.d)
+P_SRCFILES_TOBJ = $(addsuffix .o, $(P_SRCFILES))
+S_SRCFILES_TOBJ += $(addsuffix .o, $(S_SRCFILES))
+P_SRCFILES_OBJ = $(addprefix $(P_OBJDIR)/, $(P_SRCFILES_TOBJ))
+S_SRCFILES_OBJ = $(addprefix $(S_OBJDIR)/, $(S_SRCFILES_TOBJ))
+# SOURCES := $(shell find $(SRC)/ -name '*.c')
+
+DEP = $(P_SRCFILES_OBJ:.o=.d)
 
 LIBS=
 LINKS=$(addprefix -l, $(LIBS))
 
-all: setup y86
+all: setup y86-parser y86-sim
 
 setup:
-	mkdir -p $(OBJDIR) $(BINDIR)
+	mkdir -p $(OBJDIR) $(BINDIR) $(P_OBJDIR) $(S_OBJDIR)
 
-$(OBJDIR)/%.o: $(SRC)/%.c
+$(P_OBJDIR)/%.o: $(SRC)/parser/%.c
 	$(CC) $(CXXFLAGS) -c $< -o $@ $(LINKS)
 
-y86: $(SRCFILES_OBJ) $(OBJDIR)/*.o 
-	$(CC) $(CXXFLAGS) $? -o $(BINDIR)/y86 $(LINKS)
+$(S_OBJDIR)/%.o: $(SRC)/simulator/%.c
+	$(CC) $(CXXFLAGS) -c $< -o $@ $(LINKS)
+
+y86-parser: $(OBJDIR)/parser/*.o 
+	$(CC) $(CXXFLAGS) $? -o $(BINDIR)/y86-parser $(LINKS)
+
+y86-sim: $(OBJDIR)/simulator/*.o 
+	$(CC) $(CXXFLAGS) $? -o $(BINDIR)/y86-sim $(LINKS)
 
 clean:
-	rm -f $(OBJDIR)/*.o $(BINDIR)/*
-	rm -r obj bin
+	rm -r $(OBJDIR) $(BINDIR)
