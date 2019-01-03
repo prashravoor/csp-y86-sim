@@ -8,6 +8,9 @@
 
 simulator_t simulator;
 memory_t instructions;
+
+static int instructions_loaded = 0;
+
 int pipeline_enabled = 0;
 int step_mode = 0;
 
@@ -23,15 +26,12 @@ void showSource();
 void execute_next();
 void initialize();
 void initialize_memory(memory_t *ptr, int size);
-byte_t read_byte(memory_t *mem);
-void write_byte(memory_t *mem, byte_t b);
 
 int run_program(int numSteps);
 
 int main()
 {
     printf("Y86 Instruction Set Simulator --- Begin\n");
-    initialize();
 
     while (1)
     {
@@ -60,6 +60,7 @@ int main()
         switch (choice)
         {
         case 1:
+            initialize();
             load();
             break;
         case 2:
@@ -100,10 +101,21 @@ int main()
 
 void initialize()
 {
+    if ( instructions.contents )
+    {
+        free(instructions.contents;
+    }
+
+    if ( simulator.memory )
+    {
+        free(simulator.memory);
+    }
+
     bzero(&instructions, sizeof(memory_t));
     bzero(&simulator, sizeof(simulator));
-    initialize_memory(&simulator.memory, MAX_INS_MEMORY);
+    initialize_memory(&instructions, MAX_INS_MEMORY);
     initialize_memory(&simulator.memory, MAX_MEMORY);
+    instructions_loaded = 0;
 }
 
 void initialize_memory(memory_t *ptr, int size)
@@ -145,31 +157,29 @@ void load()
         write_byte(&instructions, buffer);
         ++count;
     }
+
     printf("Bytes read: %d\n", count);
+    if ( count <= 0 )
+    {
+        printf("The instructions file is empty!\n");
+    }
+    else
+    {
+        instructions_loaded = 1;
+    }
+
     instructions.size = count;
     fclose(fp);
 }
 
-void write_byte(memory_t *mem, byte_t b)
-{
-    if (!mem || !mem->contents || mem->cur >= mem->max)
-    {
-        return;
-    }
-    mem->contents[mem->cur++] = b;
-}
-
-byte_t read_byte(memory_t *mem)
-{
-    if (!mem || !mem->contents || mem->cur >= mem->max)
-    {
-        return 0;
-    }
-   return mem->contents[mem->cur++];
-}
-
 void startExec()
 {
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
     int numCycles = run_program(INT_MAX);
     printf("Total Execution Time: %d cycles\n", numCycles);
 }
@@ -231,7 +241,13 @@ void print_register(reg_t reg, char* reg_contents)
 
 void dump_registers()
 {
-    char reg_contents[24];
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
+     char reg_contents[24];
 
     bzero(reg_contents, sizeof(reg_contents));
     printf("Register Contents:\n");
@@ -299,6 +315,12 @@ void dump_registers()
 
 void dump_pipeline_regs()
 {
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
     char reg_contents[24];
 
     bzero(reg_contents, sizeof(reg_contents));
@@ -328,6 +350,12 @@ void dump_pipeline_regs()
 
 void dump_memory()
 {
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
     int start = 0, end = 0, i, j;
     printf("Memory Contents:\n");
     printf("Enter start address: (0 - %d)", simulator.memory.max);
@@ -361,16 +389,52 @@ void dump_memory()
 
 void restart()
 {
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
     // Restart Exec
+    printf("Going back to instruction 1\n");
+    instructions.cur = 0;
 }
 
 void showSource()
 {
-    printf("Source file: ");
+    int cur;
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
+    cur = instructions.cur;
+    instructions.cur = 0;
+    while ( instructions.cur < instructions.size )
+    {
+        int i = 0;
+        printf("0x%.4X: ", instructions.cur);
+        while ( (i < 16) && (instructions.cur < instructions.size))
+        {
+            printf("%.2X ", read_byte(&instructions));
+            ++i;
+        }
+        printf("\n");
+    }
+
+    instructions.cur = cur;
+    printf("\n");
 }
 
 void execute_next()
 {
+    if (!instructions_loaded)
+    {
+        printf("You need to load a program first!\n");
+        return;
+    }
+
     int numIns = 1;
     printf("Enter the number of instructions to execute: ");
     scanf("%d", &numIns);

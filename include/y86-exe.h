@@ -11,6 +11,10 @@ extern memory_t instructions;
 
 reg_t pipeline_registers[PIPELINE_STAGES];
 
+byte_t read_byte(memory_t *mem);
+
+void write_byte(memory_t *mem, byte_t b);
+
 void instruction_fetch();
 
 void instruction_decode();
