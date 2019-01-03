@@ -101,14 +101,14 @@ int main()
 
 void initialize()
 {
-    if ( instructions.contents )
+    if (instructions.contents)
     {
-        free(instructions.contents;
+        free(instructions.contents);
     }
 
-    if ( simulator.memory )
+    if (simulator.memory.contents)
     {
-        free(simulator.memory);
+        free(simulator.memory.contents);
     }
 
     bzero(&instructions, sizeof(memory_t));
@@ -159,7 +159,7 @@ void load()
     }
 
     printf("Bytes read: %d\n", count);
-    if ( count <= 0 )
+    if (count <= 0)
     {
         printf("The instructions file is empty!\n");
     }
@@ -205,10 +205,12 @@ int run_program(int steps)
 
 void toggle_pipeline()
 {
-    if (pipeline_enabled) 
+    if (pipeline_enabled)
     {
         printf("Disabled the pipeline\n");
-    } else {
+    }
+    else
+    {
         printf("Pipeline has been enabled\n");
     }
     pipeline_enabled = !pipeline_enabled;
@@ -217,24 +219,26 @@ void toggle_pipeline()
 void toggle_step_mode()
 {
     // Single Step mode
-    if (step_mode) 
+    if (step_mode)
     {
         printf("Disabled the Single Step Mode\n");
-    } else {
+    }
+    else
+    {
         printf("Enabled Single Step Mode\n");
     }
     step_mode = !step_mode;
 }
 
-void print_register(reg_t reg, char* reg_contents)
+void print_register(reg_t reg, char *reg_contents)
 {
     int i = 0;
 
-    for(i = 0; i < 8; ++i)
+    for (i = 0; i < 8; ++i)
     {
         // Get Most Significant byte of the number in each iteration
         unsigned value = (unsigned)((reg & 0xFF00000000000000) >> 56);
-        snprintf(reg_contents + 3*i, 4, "%.2X ", value);
+        snprintf(reg_contents + 3 * i, 4, "%.2X ", value);
         reg = reg << 4;
     }
 }
@@ -247,7 +251,7 @@ void dump_registers()
         return;
     }
 
-     char reg_contents[24];
+    char reg_contents[24];
 
     bzero(reg_contents, sizeof(reg_contents));
     printf("Register Contents:\n");
@@ -291,7 +295,7 @@ void dump_registers()
     print_register(simulator.registers[R_R9], reg_contents);
     printf("%s: %s\n", "R09", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
-    
+
     print_register(simulator.registers[R_R10], reg_contents);
     printf("%s: %s\n", "R10", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
@@ -345,7 +349,6 @@ void dump_pipeline_regs()
     print_register(simulator.registers[P_WB], reg_contents);
     printf("%s: %s\n", "WB", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
-
 }
 
 void dump_memory()
@@ -375,17 +378,16 @@ void dump_memory()
         return;
     }
 
-    for ( i = start; i < end;)
+    for (i = start; i < end;)
     {
         printf("Address (0x): %6X:  ", i);
-        for ( j = 0; j < 32 && i < end; ++j, ++i)
+        for (j = 0; j < 32 && i < end; ++j, ++i)
         {
             printf("%.2X ", simulator.memory.contents[i]);
         }
         printf("\n");
     }
-
- }
+}
 
 void restart()
 {
@@ -411,11 +413,11 @@ void showSource()
 
     cur = instructions.cur;
     instructions.cur = 0;
-    while ( instructions.cur < instructions.size )
+    while (instructions.cur < instructions.size)
     {
         int i = 0;
         printf("0x%.4X: ", instructions.cur);
-        while ( (i < 16) && (instructions.cur < instructions.size))
+        while ((i < 16) && (instructions.cur < instructions.size))
         {
             printf("%.2X ", read_byte(&instructions));
             ++i;
