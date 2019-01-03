@@ -23,6 +23,16 @@ enum reg_names_t
     R_ERR
 };
 
+enum pipeline_statges_t
+{
+    P_IF = 0,
+    P_DE,
+    P_EX,
+    P_ME,
+    P_WB,
+    P_ERR
+};
+
 /* Different argument types */
 enum argument_type_t
 {

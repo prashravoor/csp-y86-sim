@@ -216,15 +216,15 @@ void toggle_step_mode()
     step_mode = !step_mode;
 }
 
-void print_register(int r, char* reg_contents)
+void print_register(reg_t reg, char* reg_contents)
 {
-    unsigned long long reg = simulator.registers[r];
     int i = 0;
 
     for(i = 0; i < 8; ++i)
     {
         // Get Most Significant byte of the number in each iteration
-        snprintf(reg_contents + 2*i, 4, "%.2X ", (unsigned)((reg & 0xFF00000000000000) >> 56));
+        unsigned value = (unsigned)((reg & 0xFF00000000000000) >> 56);
+        snprintf(reg_contents + 3*i, 4, "%.2X ", value);
         reg = reg << 4;
     }
 }
@@ -236,75 +236,128 @@ void dump_registers()
     bzero(reg_contents, sizeof(reg_contents));
     printf("Register Contents:\n");
 
-    print_register(R_RAX, reg_contents);
+    print_register(simulator.registers[R_RAX], reg_contents);
     printf("%s: %s\n", "RAX", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RCX, reg_contents);
+    print_register(simulator.registers[R_RCX], reg_contents);
     printf("%s: %s\n", "RCX", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RDX, reg_contents);
+    print_register(simulator.registers[R_RDX], reg_contents);
     printf("%s: %s\n", "RDX", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RBX, reg_contents);
+    print_register(simulator.registers[R_RBX], reg_contents);
     printf("%s: %s\n", "RBX", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RSP, reg_contents);
+    print_register(simulator.registers[R_RSP], reg_contents);
     printf("%s: %s\n", "RSP", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RBP, reg_contents);
+    print_register(simulator.registers[R_RBP], reg_contents);
     printf("%s: %s\n", "RBP", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RSI, reg_contents);
+    print_register(simulator.registers[R_RSI], reg_contents);
     printf("%s: %s\n", "RSI", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_RDI, reg_contents);
+    print_register(simulator.registers[R_RDI], reg_contents);
     printf("%s: %s\n", "RDI", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R8, reg_contents);
+    print_register(simulator.registers[R_R8], reg_contents);
     printf("%s: %s\n", "R08", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R9, reg_contents);
+    print_register(simulator.registers[R_R9], reg_contents);
     printf("%s: %s\n", "R09", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
     
-    print_register(R_R10, reg_contents);
+    print_register(simulator.registers[R_R10], reg_contents);
     printf("%s: %s\n", "R10", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R11, reg_contents);
+    print_register(simulator.registers[R_R11], reg_contents);
     printf("%s: %s\n", "R11", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R12, reg_contents);
+    print_register(simulator.registers[R_R12], reg_contents);
     printf("%s: %s\n", "R12", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R13, reg_contents);
+    print_register(simulator.registers[R_R13], reg_contents);
     printf("%s: %s\n", "R13", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 
-    print_register(R_R14, reg_contents);
+    print_register(simulator.registers[R_R14], reg_contents);
     printf("%s: %s\n", "R14", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
 }
 
 void dump_pipeline_regs()
 {
+    char reg_contents[24];
+
+    bzero(reg_contents, sizeof(reg_contents));
     printf("Pipeline Register Contents:\n");
+
+    print_register(simulator.registers[P_IF], reg_contents);
+    printf("%s: %s\n", "IF", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(simulator.registers[P_DE], reg_contents);
+    printf("%s: %s\n", "DE", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(simulator.registers[P_EX], reg_contents);
+    printf("%s: %s\n", "EX", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(simulator.registers[P_ME], reg_contents);
+    printf("%s: %s\n", "ME", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(simulator.registers[P_WB], reg_contents);
+    printf("%s: %s\n", "WB", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
 }
+
 void dump_memory()
 {
+    int start = 0, end = 0, i, j;
     printf("Memory Contents:\n");
-}
+    printf("Enter start address: (0 - %d)", simulator.memory.max);
+    scanf("%d", &start);
+
+    if (start < 0 || start >= simulator.memory.max)
+    {
+        printf("Invalid address entered!");
+        return;
+    }
+
+    printf("Enter end address: (0 - %d)", simulator.memory.max);
+    scanf("%d", &end);
+    if (end <= 0 || end > simulator.memory.max)
+    {
+        printf("Invalid address entered!");
+        return;
+    }
+
+    for ( i = start; i < end;)
+    {
+        printf("Address (0x): %6X:  ", i);
+        for ( j = 0; j < 32 && i < end; ++j, ++i)
+        {
+            printf("%.2X ", simulator.memory.contents[i]);
+        }
+        printf("\n");
+    }
+
+ }
 
 void restart()
 {

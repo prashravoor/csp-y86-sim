@@ -8,6 +8,7 @@
 #define REG_SIZE 0xF
 
 typedef unsigned char byte_t;
+typedef unsigned long long reg_t;
 
 typedef struct {
     int cur;
@@ -18,7 +19,7 @@ typedef struct {
 
 typedef struct {
     memory_t memory;
-    unsigned long long registers[REG_SIZE];
+    reg_t registers[REG_SIZE];
     unsigned int pc;
     byte_t zero_flag;
     byte_t of_flag;

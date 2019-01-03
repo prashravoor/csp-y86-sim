@@ -7,6 +7,10 @@ extern int pipeline_enabled;
 extern simulator_t simulator;
 extern memory_t instructions;
 
+#define PIPELINE_STAGES 5
+
+reg_t pipeline_registers[PIPELINE_STAGES];
+
 void instruction_fetch();
 
 void instruction_decode();
