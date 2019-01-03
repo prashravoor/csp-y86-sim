@@ -154,7 +154,7 @@ void load()
     byte_t buffer;
 
     int count = 0;
-    while (fread(&buffer, 1, 1, fp))
+    while (fread(&buffer, sizeof(buffer), 1, fp))
     {
         //printf("%X ", buffer);
         write_byte(&instructions, buffer);
@@ -172,6 +172,7 @@ void load()
     }
 
     instructions.size = count;
+    instructions.cur = 0;
     fclose(fp);
 }
 

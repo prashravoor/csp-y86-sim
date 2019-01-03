@@ -15,6 +15,12 @@ byte_t read_byte(memory_t *mem);
 
 void write_byte(memory_t *mem, byte_t b);
 
+unsigned get_higher_nibble(byte_t b);
+
+unsigned get_lower_nibble(byte_t b);
+
+reg_t read_number(memory_t* mem);
+
 void instruction_fetch();
 
 void instruction_decode();

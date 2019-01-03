@@ -45,9 +45,9 @@ enum argument_type_t
 /* Different instruction types */
 enum ins_type_t
 {
-    I_HALT,
+    I_HALT = 0,
     I_NOP,
-    I_RRMOV,
+    I_CMOV,
     I_IRMOV,
     I_RMMOV,
     I_MRMOV,
@@ -57,7 +57,6 @@ enum ins_type_t
     I_RET,
     I_PUSH,
     I_POP,
-    I_ALUOP,
     I_NONE
 };
 
