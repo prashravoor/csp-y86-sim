@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include "y86-parser.h"
 
-int main()
+/*int main()
 {
     printf("Hello, World!\n");
     return 0;
 }
+*/

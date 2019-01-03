@@ -4,8 +4,13 @@ SRC=src
 OBJDIR=obj
 BINDIR=bin
 INC_DIR=include
+LEX=flex
+YACC=bison
+LEXLIB=-lfl
+LCFLAGS=-02
 
-P_SRCFILES = y86-parser
+
+P_SRCFILES = y86-parser isa yas-grammar yas
 P_SRCFILES_TSRC = $(addsuffix .c, $(P_SRCFILES))
 P_SRCFILES_SRC = $(addprefix $(SRC)/parser/, $(P_SRCFILES_TSRC))
 P_OBJDIR = $(OBJDIR)/parser
