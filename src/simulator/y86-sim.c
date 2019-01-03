@@ -36,7 +36,7 @@ int main()
     while (1)
     {
         int choice = 0;
-        printf("Execution:\n");
+        printf("\n%s\n\n", "**************Execution*****************");
         printf("1.  Load .yo file\n");
         printf("2.  Start Execution\n");
         printf("3.  Toggle PipeLine\n");
@@ -47,7 +47,7 @@ int main()
         printf("8.  Restart Execution\n");
         printf("9.  Show Source Program\n");
         printf("10. Execute Next Instructions\n");
-        printf("11. Exit\n");
+        printf("11. Exit\n\n\n");
 
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -93,7 +93,10 @@ int main()
         case 11:
             return 0;
             break;
+        default:
+            printf("Invalid choice!\n");
         }
+        printf("\n\n");
     }
 
     return 0;
