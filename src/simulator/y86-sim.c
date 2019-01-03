@@ -2,24 +2,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "y86-exe.h"
+#include "limits.h"
+#include "enums.h"
 
+simulator_t simulator;
 memory_t instructions;
-byte_t registers[REG_SIZE];
+int pipeline_enabled = 0;
+int step_mode = 0;
 
 void load();
 void startExec();
-void enablePipeline();
-void singleStepMode();
-void dumpRegisters();
-void dumpPipelineRegs();
-void dumpMemory();
+void toggle_pipeline();
+void toggle_step_mode();
+void dump_registers();
+void dump_pipeline_regs();
+void dump_memory();
 void restart();
 void showSource();
-void executeNext();
+void execute_next();
 void initialize();
 void initialize_memory(memory_t *ptr, int size);
 byte_t read_byte(memory_t *mem);
 void write_byte(memory_t *mem, byte_t b);
+
+int run_program(int numSteps);
 
 int main()
 {
@@ -32,8 +39,8 @@ int main()
         printf("Execution:\n");
         printf("1.  Load .yo file\n");
         printf("2.  Start Execution\n");
-        printf("3.  Enable PipeLine\n");
-        printf("4.  Enter Single Step Mode\n");
+        printf("3.  Toggle PipeLine\n");
+        printf("4.  Toggle Single Step Mode\n");
         printf("5.  Display Register Contents\n");
         printf("6.  Show Pipeline Register Contents\n");
         printf("7.  Dump Memory\n");
@@ -59,19 +66,19 @@ int main()
             startExec();
             break;
         case 3:
-            enablePipeline();
+            toggle_pipeline();
             break;
         case 4:
-            singleStepMode();
+            toggle_step_mode();
             break;
         case 5:
-            dumpRegisters();
+            dump_registers();
             break;
         case 6:
-            dumpPipelineRegs();
+            dump_pipeline_regs();
             break;
         case 7:
-            dumpMemory();
+            dump_memory();
             break;
         case 8:
             restart();
@@ -80,7 +87,7 @@ int main()
             showSource();
             break;
         case 10:
-            executeNext();
+            execute_next();
             break;
         case 11:
             return 0;
@@ -94,8 +101,9 @@ int main()
 void initialize()
 {
     bzero(&instructions, sizeof(memory_t));
-    bzero(&registers, sizeof(registers));
-    initialize_memory(&instructions, MAX_MEMORY);
+    bzero(&simulator, sizeof(simulator));
+    initialize_memory(&simulator.memory, MAX_INS_MEMORY);
+    initialize_memory(&simulator.memory, MAX_MEMORY);
 }
 
 void initialize_memory(memory_t *ptr, int size)
@@ -107,6 +115,7 @@ void initialize_memory(memory_t *ptr, int size)
     }
     ptr->contents = calloc(sizeof(unsigned char), size);
     ptr->max = size;
+    ptr->size = 0;
     ptr->cur = 0;
 }
 
@@ -137,12 +146,7 @@ void load()
         ++count;
     }
     printf("Bytes read: %d\n", count);
-    instructions.max = count;
-    instructions.cur = 0;
-    while (instructions.cur < instructions.max)
-    {
-        printf("%.2x ", read_byte(&instructions));
-    }
+    instructions.size = count;
     fclose(fp);
 }
 
@@ -161,37 +165,143 @@ byte_t read_byte(memory_t *mem)
     {
         return 0;
     }
-    /*byte_t b = mem->contents[mem->cur];
-    mem->cur += 1;
-    return b;
-    */
    return mem->contents[mem->cur++];
 }
 
 void startExec()
 {
-    // Start execution
+    int numCycles = run_program(INT_MAX);
+    printf("Total Execution Time: %d cycles\n", numCycles);
 }
 
-void enablePipeline()
+int run_program(int steps)
 {
-    // Enable Pipeline
+    int cycles = 0;
+    int cur_steps = 0;
+    // Start execution
+    while (instructions.cur < instructions.size && cur_steps++ < steps)
+    {
+        instruction_fetch();
+        instruction_decode();
+        instruction_execute();
+        instruction_memory();
+        instruction_write();
+        update_pc();
+        cycles += 1;
+    }
+
+    return cycles;
 }
-void singleStepMode()
+
+void toggle_pipeline()
+{
+    if (pipeline_enabled) 
+    {
+        printf("Disabled the pipeline\n");
+    } else {
+        printf("Pipeline has been enabled\n");
+    }
+    pipeline_enabled = !pipeline_enabled;
+}
+
+void toggle_step_mode()
 {
     // Single Step mode
+    if (step_mode) 
+    {
+        printf("Disabled the Single Step Mode\n");
+    } else {
+        printf("Enabled Single Step Mode\n");
+    }
+    step_mode = !step_mode;
 }
 
-void dumpRegisters()
+void print_register(int r, char* reg_contents)
 {
-    printf("Register Contents:\n");
+    unsigned long long reg = simulator.registers[r];
+    int i = 0;
+
+    for(i = 0; i < 8; ++i)
+    {
+        // Get Most Significant byte of the number in each iteration
+        snprintf(reg_contents + 2*i, 4, "%.2X ", (unsigned)((reg & 0xFF00000000000000) >> 56));
+        reg = reg << 4;
+    }
 }
 
-void dumpPipelineRegs()
+void dump_registers()
+{
+    char reg_contents[24];
+
+    bzero(reg_contents, sizeof(reg_contents));
+    printf("Register Contents:\n");
+
+    print_register(R_RAX, reg_contents);
+    printf("%s: %s\n", "RAX", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RCX, reg_contents);
+    printf("%s: %s\n", "RCX", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RDX, reg_contents);
+    printf("%s: %s\n", "RDX", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RBX, reg_contents);
+    printf("%s: %s\n", "RBX", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RSP, reg_contents);
+    printf("%s: %s\n", "RSP", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RBP, reg_contents);
+    printf("%s: %s\n", "RBP", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RSI, reg_contents);
+    printf("%s: %s\n", "RSI", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_RDI, reg_contents);
+    printf("%s: %s\n", "RDI", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R8, reg_contents);
+    printf("%s: %s\n", "R08", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R9, reg_contents);
+    printf("%s: %s\n", "R09", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+    
+    print_register(R_R10, reg_contents);
+    printf("%s: %s\n", "R10", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R11, reg_contents);
+    printf("%s: %s\n", "R11", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R12, reg_contents);
+    printf("%s: %s\n", "R12", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R13, reg_contents);
+    printf("%s: %s\n", "R13", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+
+    print_register(R_R14, reg_contents);
+    printf("%s: %s\n", "R14", reg_contents);
+    bzero(reg_contents, sizeof(reg_contents));
+}
+
+void dump_pipeline_regs()
 {
     printf("Pipeline Register Contents:\n");
 }
-void dumpMemory()
+void dump_memory()
 {
     printf("Memory Contents:\n");
 }
@@ -206,7 +316,7 @@ void showSource()
     printf("Source file: ");
 }
 
-void executeNext()
+void execute_next()
 {
     int numIns = 1;
     printf("Enter the number of instructions to execute: ");

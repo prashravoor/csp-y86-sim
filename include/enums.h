@@ -12,6 +12,13 @@ enum reg_names_t
     R_RBP,
     R_RSI,
     R_RDI,
+    R_R8,
+    R_R9,
+    R_R10,
+    R_R11,
+    R_R12,
+    R_R13,
+    R_R14,
     R_NONE = 0xF,
     R_ERR
 };
