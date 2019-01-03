@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-#define MAX_INS_MEMORY 8192
 #define MAX_MEMORY 16384
 #define REG_SIZE 0xF
 

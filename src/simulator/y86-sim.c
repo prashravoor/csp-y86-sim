@@ -7,7 +7,7 @@
 #include "enums.h"
 
 simulator_t simulator;
-memory_t instructions;
+memory_t* instructions;
 
 static int instructions_loaded = 0;
 
@@ -104,21 +104,15 @@ int main()
 
 void initialize()
 {
-    if (instructions.contents)
-    {
-        free(instructions.contents);
-    }
-
     if (simulator.memory.contents)
     {
         free(simulator.memory.contents);
     }
 
-    bzero(&instructions, sizeof(memory_t));
     bzero(&simulator, sizeof(simulator));
-    initialize_memory(&instructions, MAX_INS_MEMORY);
     initialize_memory(&simulator.memory, MAX_MEMORY);
     instructions_loaded = 0;
+    instructions = &simulator.memory;
 }
 
 void initialize_memory(memory_t *ptr, int size)
@@ -157,7 +151,7 @@ void load()
     while (fread(&buffer, sizeof(buffer), 1, fp))
     {
         //printf("%X ", buffer);
-        write_byte(&instructions, buffer);
+        write_byte(instructions, buffer);
         ++count;
     }
 
@@ -171,8 +165,8 @@ void load()
         instructions_loaded = 1;
     }
 
-    instructions.size = count;
-    instructions.cur = 0;
+    instructions->size = count;
+    instructions->cur = 0;
     fclose(fp);
 }
 
@@ -184,24 +178,42 @@ void startExec()
         return;
     }
 
-    int numCycles = run_program(INT_MAX);
+    reset_pipeline(P_IF);
+    reset_pipeline(P_DE);
+    reset_pipeline(P_EX);
+    reset_pipeline(P_ME);
+    reset_pipeline(P_WB);
+
+    int num_steps = step_mode ? 1 : INT_MAX;
+    int numCycles = run_program(num_steps);
     printf("Total Execution Time: %d cycles\n", numCycles);
 }
 
+int cur_ins = 0;
+extern int error;
 int run_program(int steps)
 {
     int cycles = 0;
     int cur_steps = 0;
+    
     // Start execution
-    while (instructions.cur < instructions.size && cur_steps++ < steps)
+    cur_ins = P_IF;
+    while (instructions->cur < instructions->size && cur_steps++ < steps)
     {
+        if(error)
+        {
+            printf("Detected error, stopping\n");
+            break;
+        }
+
         instruction_fetch();
         instruction_decode();
         instruction_execute();
         instruction_memory();
         instruction_write();
-        update_pc();
+        //update_pc();
         cycles += 1;
+        cur_ins = (cur_ins + 1) % P_ERR;
     }
 
     return cycles;
@@ -403,7 +415,7 @@ void restart()
 
     // Restart Exec
     printf("Going back to instruction 1\n");
-    instructions.cur = 0;
+    instructions->cur = 0;
 }
 
 void showSource()
@@ -415,21 +427,21 @@ void showSource()
         return;
     }
 
-    cur = instructions.cur;
-    instructions.cur = 0;
-    while (instructions.cur < instructions.size)
+    cur = instructions->cur;
+    instructions->cur = 0;
+    while (instructions->cur < instructions->size)
     {
         int i = 0;
-        printf("0x%.4X: ", instructions.cur);
-        while ((i < 16) && (instructions.cur < instructions.size))
+        printf("0x%.4X: ", instructions->cur);
+        while ((i < 16) && (instructions->cur < instructions->size))
         {
-            printf("%.2X ", read_byte(&instructions));
+            printf("%.2X ", read_byte(instructions));
             ++i;
         }
         printf("\n");
     }
 
-    instructions.cur = cur;
+    instructions->cur = cur;
     printf("\n");
 }
 
