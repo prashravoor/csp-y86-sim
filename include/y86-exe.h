@@ -17,7 +17,6 @@ typedef struct {
     int func_type;
     reg_t valA;
     reg_t valB;
-    reg_t valC;
     reg_t valE;
     reg_t valM;
 } pipeline_t;
@@ -39,6 +38,8 @@ reg_t read_memory(memory_t* mem, int start_log);
 void write_memory(memory_t* mem, reg_t value, int start_loc);
 
 void reset_pipeline(int p);
+
+void print_pipeline(int pipe);
 
 void instruction_fetch();
 

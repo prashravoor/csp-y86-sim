@@ -7,12 +7,13 @@
 #include "enums.h"
 
 simulator_t simulator;
-memory_t* instructions;
+memory_t *instructions;
 
 static int instructions_loaded = 0;
 
 int pipeline_enabled = 0;
 int step_mode = 0;
+int cur_ins = P_IF;
 
 void load();
 void startExec();
@@ -113,6 +114,13 @@ void initialize()
     initialize_memory(&simulator.memory, MAX_MEMORY);
     instructions_loaded = 0;
     instructions = &simulator.memory;
+
+    reset_pipeline(P_IF);
+    reset_pipeline(P_DE);
+    reset_pipeline(P_EX);
+    reset_pipeline(P_ME);
+    reset_pipeline(P_WB);
+    cur_ins = P_IF;
 }
 
 void initialize_memory(memory_t *ptr, int size)
@@ -168,6 +176,7 @@ void load()
     instructions->size = count;
     instructions->cur = 0;
     fclose(fp);
+
 }
 
 void startExec()
@@ -178,42 +187,49 @@ void startExec()
         return;
     }
 
-    reset_pipeline(P_IF);
-    reset_pipeline(P_DE);
-    reset_pipeline(P_EX);
-    reset_pipeline(P_ME);
-    reset_pipeline(P_WB);
-
     int num_steps = step_mode ? 1 : INT_MAX;
     int numCycles = run_program(num_steps);
     printf("Total Execution Time: %d cycles\n", numCycles);
 }
 
-int cur_ins = 0;
 extern int error;
 int run_program(int steps)
 {
     int cycles = 0;
     int cur_steps = 0;
-    
+
     // Start execution
-    cur_ins = P_IF;
     while (instructions->cur < instructions->size && cur_steps++ < steps)
     {
-        if(error)
+        if (error)
         {
             printf("Detected error, stopping\n");
             break;
         }
 
         instruction_fetch();
+        //if (!pipeline_enabled) cur_ins++;
         instruction_decode();
+        //if (!pipeline_enabled) cur_ins++;
         instruction_execute();
+        //if (!pipeline_enabled) cur_ins++;
         instruction_memory();
+        //if (!pipeline_enabled) cur_ins++;
         instruction_write();
         //update_pc();
         cycles += 1;
         cur_ins = (cur_ins + 1) % P_ERR;
+    }
+
+    if(instructions->cur >= instructions->size)
+    {
+        printf("Program Execution Complete!\n");
+        reset_pipeline(P_IF);
+        reset_pipeline(P_DE);
+        reset_pipeline(P_EX);
+        reset_pipeline(P_ME);
+        reset_pipeline(P_WB);
+        cur_ins = P_IF;
     }
 
     return cycles;
@@ -246,16 +262,27 @@ void toggle_step_mode()
     step_mode = !step_mode;
 }
 
+void rvereseArray(char arr[], int start, int end) 
+{ 
+    while (start < end) 
+    { 
+        int temp = arr[start];  
+        arr[start] = arr[end]; 
+        arr[end] = temp; 
+        start++; 
+        end--; 
+    }  
+}  
+
 void print_register(reg_t reg, char *reg_contents)
 {
     int i = 0;
 
-    for (i = 0; i < 8; ++i)
+    for (i = 7; i >= 0; --i)
     {
         // Get Most Significant byte of the number in each iteration
-        unsigned value = (unsigned)((reg & 0xFF00000000000000) >> 56);
-        snprintf(reg_contents + 3 * i, 4, "%.2X ", value);
-        reg = reg << 4;
+        unsigned value = (reg_t)( (reg >> i*8) & 0xFF);
+        snprintf(reg_contents + 3 * (7-i), 4, "%.2X ", value);
     }
 }
 
@@ -331,6 +358,8 @@ void dump_registers()
     print_register(simulator.registers[R_R14], reg_contents);
     printf("%s: %s\n", "R14", reg_contents);
     bzero(reg_contents, sizeof(reg_contents));
+
+    printf("\n\nCondition Codes: ZF: %d, SF: %d, OF: %d\n", simulator.zero_flag, simulator.sign_flag, simulator.of_flag);
 }
 
 void dump_pipeline_regs()
@@ -341,30 +370,11 @@ void dump_pipeline_regs()
         return;
     }
 
-    char reg_contents[24];
-
-    bzero(reg_contents, sizeof(reg_contents));
-    printf("Pipeline Register Contents:\n");
-
-    print_register(simulator.registers[P_IF], reg_contents);
-    printf("%s: %s\n", "IF", reg_contents);
-    bzero(reg_contents, sizeof(reg_contents));
-
-    print_register(simulator.registers[P_DE], reg_contents);
-    printf("%s: %s\n", "DE", reg_contents);
-    bzero(reg_contents, sizeof(reg_contents));
-
-    print_register(simulator.registers[P_EX], reg_contents);
-    printf("%s: %s\n", "EX", reg_contents);
-    bzero(reg_contents, sizeof(reg_contents));
-
-    print_register(simulator.registers[P_ME], reg_contents);
-    printf("%s: %s\n", "ME", reg_contents);
-    bzero(reg_contents, sizeof(reg_contents));
-
-    print_register(simulator.registers[P_WB], reg_contents);
-    printf("%s: %s\n", "WB", reg_contents);
-    bzero(reg_contents, sizeof(reg_contents));
+    print_pipeline(P_IF);
+    print_pipeline(P_DE);
+    print_pipeline(P_EX);
+    print_pipeline(P_ME);
+    print_pipeline(P_WB);
 }
 
 void dump_memory()
@@ -413,6 +423,8 @@ void restart()
         return;
     }
 
+    error = 0;
+
     // Restart Exec
     printf("Going back to instruction 1\n");
     instructions->cur = 0;
@@ -447,6 +459,14 @@ void showSource()
 
 void execute_next()
 {
+
+    if ( error )
+    {
+        printf("Simulator is in error state!\n");
+        return;
+    }
+
+    int num_cycles = 0;
     if (!instructions_loaded)
     {
         printf("You need to load a program first!\n");
@@ -456,4 +476,6 @@ void execute_next()
     int numIns = 1;
     printf("Enter the number of instructions to execute: ");
     scanf("%d", &numIns);
+    num_cycles = run_program(numIns);
+    printf("Executed %d cycles\n", num_cycles);
 }

@@ -55,9 +55,21 @@ void reset_pipeline(int pipe)
         p->regB = R_NONE;
         p->valA = 0;
         p->valB = 0;
-        p->valC = 0;
         p->valE = 0;
         p->valM = 0;
+    }
+}
+
+void print_pipeline(int pipe)
+{
+    if (pipe >= P_IF && pipe <= P_WB)
+    {
+        pipeline_t *p = &pipeline_registers[pipe];
+        printf("Pipeline Stage: %d\n", pipe);
+        printf("Instruction Type: %d, Sub-Type: %d\n",p->ins_type, p->func_type);
+        printf("Register A: %d, Register B: %d\n", p->regA, p->regB);
+        printf("Register A Value: %llX, Register B Value: %llX, Offstet: %llX\n", p->valA, p->valB, p->valE);
+        printf("Intermediates: ValM: %llX\n\n", p->valM);
     }
 }
 
@@ -117,7 +129,7 @@ void instruction_fetch()
         byte_t registers = read_byte(instructions);
         regA = get_higher_nibble(registers);
         regB = get_lower_nibble(registers);
-        func_type = get_lower_nibble(ins_type);
+        func_type = get_lower_nibble(code);
 
         printf("Got registers: %u, %u\n", regA, regB);
         switch (func_type)
@@ -183,14 +195,14 @@ void instruction_fetch()
         byte_t registers = read_byte(instructions);
         regA = get_higher_nibble(registers);
         regB = get_lower_nibble(registers);
-        func_type = get_lower_nibble(ins_type);
+        func_type = get_lower_nibble(code);
 
         printf("ALU Operation. Type: %u, RegA: %u, RegB: %u\n", func_type, regA, regB);
         break;
     }
     case I_JMP:
     {
-        func_type = get_lower_nibble(ins_type);
+        func_type = get_lower_nibble(code);
         valC = read_number(instructions);
 
         printf("Jump. Type: %u, Value: %llX\n", func_type, valC);
@@ -233,7 +245,7 @@ void instruction_fetch()
         pipeline_registers[P_DE].func_type = func_type;
         pipeline_registers[P_DE].regA = regA;
         pipeline_registers[P_DE].regB = regB;
-        pipeline_registers[P_DE].valC = valC;
+        pipeline_registers[P_DE].valE = valC;
     }
 }
 
@@ -281,10 +293,6 @@ void instruction_decode()
     // For PUSH and POP, stack pointer is implied
     if (s->ins_type == I_PUSH || s->ins_type == I_POP)
     {
-        if (s->ins_type == I_POP)
-        {
-            s->regA = R_RSP;
-        }
         s->regB = R_RSP;
     }
 
@@ -298,7 +306,7 @@ void instruction_decode()
     d->func_type = s->func_type;
     d->regA = s->regA;
     d->regB = s->regB;
-    d->valC = s->valC;
+    d->valE = s->valE;
     d->is_full = 1;
 
     reset_pipeline(P_DE);
@@ -344,7 +352,8 @@ void instruction_execute()
         break;
     case I_CMOV:
     {
-        s->valE = s->valB + s->valA;
+        s->valE = 0 + s->valA;
+        set_cond_codes(s->valA, 0, s->valE, ALU_ADD);
         int cnd_met = condition_satisfied(simulator.zero_flag, simulator.sign_flag, simulator.of_flag, s->func_type);
         if (!cnd_met)
         {
@@ -366,12 +375,12 @@ void instruction_execute()
     }
     case I_RMMOV:
     {
-        s->valE = s->valB + s->valC;
+        s->valE = s->valB + s->valE;
         break;
     }
     case I_MRMOV:
     {
-        s->valE = s->valC + s->valB;
+        s->valE = s->valE + s->valB;
         break;
     }
     case I_ALU:
@@ -385,7 +394,7 @@ void instruction_execute()
             s->valE = s->valA & s->valB;
             break;
         case ALU_SUB:
-            s->valE = s->valA - s->valB;
+            s->valE = s->valB - s->valA;
             break;
         case ALU_XOR:
             s->valE = s->valA ^ s->valB;
@@ -403,19 +412,25 @@ void instruction_execute()
         int jmp = condition_satisfied(simulator.zero_flag, simulator.sign_flag, simulator.of_flag, s->func_type);
         if (jmp)
         {
-            printf("Jump instruction satisfied: New PC address: %llX\n", s->valC);
-            instructions->cur = s->valC;
+            printf("Jump instruction satisfied: New PC address: %llX\n", s->valE);
+            instructions->cur = s->valE;
+            reset_pipeline(P_IF);
+            reset_pipeline(P_DE);
         }
         break;
     }
     case I_CALL:
     {
-        s->valE = s->valB - 8;
+        s->valM = instructions->cur;
+        instructions->cur = s->valE;
+        s->valB = s->valB - 8;
+        reset_pipeline(P_IF);
+        reset_pipeline(P_DE);
         break;
     }
     case I_RET:
     {
-        s->valA = s->valA + 8;
+        s->valE = s->valB + 8;
         break;
     }
     case I_PUSH:
@@ -439,7 +454,6 @@ void instruction_execute()
     d->regB = s->regB;
     d->valA = s->valA;
     d->valB = s->valB;
-    d->valC = s->valC;
     d->valE = s->valE;
     d->valM = s->valM;
     d->is_full = 1;
@@ -534,29 +548,34 @@ void instruction_memory()
     }
     case I_JMP:
     {
+        break;
     }
     case I_CALL:
     {
-        printf("Call-ed, write value %llX to memory location %llX\n", (reg_t)instructions->cur, s->valE);
-        write_memory(&simulator.memory, (reg_t)instructions->cur, s->valE);
+        printf("Call-ed, write value %llX to memory location %llX\n", (reg_t)s->valM, s->valB);
+        write_memory(&simulator.memory, (reg_t)s->valM, s->valB);
         break;
     }
     case I_RET:
     {
         printf("Ret-ed, read value from memory location %llX\n", s->valA);
         s->valM = read_memory(&simulator.memory, s->valA);
+        instructions->cur = (int)s->valM;
+        reset_pipeline(P_IF);
+        reset_pipeline(P_DE);
+        reset_pipeline(P_EX);
         break;
     }
     case I_PUSH:
     {
-        printf("Push-ed, write value %llX to memory location %llX\n", s->valE, s->valB);
-        write_memory(&simulator.memory, (reg_t)instructions->cur, s->valE);
+        printf("Push-ed, write value %llX to memory location %llX\n", s->valA, s->valE);
+        write_memory(&simulator.memory, (reg_t)s->valA, s->valE);
         break;
     }
     case I_POP:
     {
-        printf("Pop-ed, read value from memory location %llX\n", s->valA);
-        s->valM = read_memory(&simulator.memory, s->valA);
+        printf("Pop-ed, read value from memory location %llX\n", s->valB);
+        s->valM = read_memory(&simulator.memory, s->valB);
         break;
     }
     default:
@@ -570,7 +589,6 @@ void instruction_memory()
     d->regB = s->regB;
     d->valA = s->valA;
     d->valB = s->valB;
-    d->valC = s->valC;
     d->valE = s->valE;
     d->valM = s->valM;
     d->is_full = 1;
@@ -648,10 +666,11 @@ void instruction_write()
     }
     case I_JMP:
     {
+        break;
     }
     case I_CALL:
     {
-        simulator.registers[R_RSP] = s->valE;
+        simulator.registers[R_RSP] = s->valB;
         break;
     }
     case I_RET:
@@ -686,7 +705,7 @@ void instruction_write()
     d->valM = s->valM;
     d->is_full = 1;*/
 
-    reset_pipeline(P_ME);
+    reset_pipeline(P_WB);
 }
 
 void update_pc()

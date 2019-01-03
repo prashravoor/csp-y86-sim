@@ -1,0 +1,8 @@
+irmovl $100, %eax
+xorl %edx, %edx
+loop:
+addl %eax, %edx
+irmovl $1, %ebx
+subl %ebx, %eax
+jne loop
+halt
