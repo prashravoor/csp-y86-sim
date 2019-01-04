@@ -122,7 +122,7 @@ void instruction_fetch()
         return;
         break;
     case I_NOP:
-        printf("No Op\n");
+        //printf("No Op\n");
         break;
     case I_CMOV:
     {
@@ -131,7 +131,7 @@ void instruction_fetch()
         regB = get_lower_nibble(registers);
         func_type = get_lower_nibble(code);
 
-        printf("Got registers: %u, %u\n", regA, regB);
+        //printf("Got registers: %u, %u\n", regA, regB);
         switch (func_type)
         {
         case C_YES:
@@ -348,7 +348,7 @@ void instruction_execute()
         return;
         break;
     case I_NOP:
-        printf("No Op\n");
+        //printf("No Op\n");
         break;
     case I_CMOV:
     {
@@ -520,7 +520,7 @@ void instruction_memory()
         return;
         break;
     case I_NOP:
-        printf("No Op\n");
+        //printf("No Op\n");
         break;
     case I_CMOV:
     {
@@ -632,7 +632,7 @@ void instruction_write()
         return;
         break;
     case I_NOP:
-        printf("No Op\n");
+        //printf("No Op\n");
         break;
     case I_CMOV:
     {
