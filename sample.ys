@@ -1,8 +1,8 @@
  # Execution begins at address 0
 .pos 0
-init:  irmovq Stack, %esp       # Set up stack pointer
-irmovq Stack, %ebp       # Set up base pointer
-calq Main                # Execute main program
+init:  irmovl Stack, %esp       # Set up stack pointer
+irmovl Stack, %ebp       # Set up base pointer
+call Main                # Execute main program
 halt                     # Terminate program
 # Array of 4 elements
 .align 4
@@ -10,34 +10,38 @@ array: .long 0xd
 .long 0xc0
 .long 0xb00
 .long 0xa000
-Main:  pushq %ebp
-rrmovq %esp,%ebp
-irmovq $4,%eax
-pushq %eax               # Push 4
-irmovq array,%edx
-pushq %edx               # Push array
-calq Sum                 # Sum(array, 4)
-rrmovq %ebp,%esp
-popq %ebp
+Main:  pushl %ebp
+rrmovl %esp,%ebp
+irmovl $4,%eax
+pushl %eax               # Push 4
+irmovl array,%edx
+pushl %edx               # Push array
+call Sum                 # Sum(array, 4)
+rrmovl %ebp,%esp
+popl %ebp
 ret
 #/* $begin sum-ys 0 */
 # int Sum(int *Start, int Count)
-Sum:   pushq %ebp
-rrmovq %esp,%ebp
-mrmovq 8(%ebp),%ecx      # ecx = Start
-mrmovq 12(%ebp),%edx     # edx = Count
-xorq %eax,%eax           # sum = 0
-andq %edx,%edx           # Set condition codes
+Sum:   pushl %ebp
+rrmovl %esp,%ebp
+irmovl 8, %edi
+addl %edi, %ebp
+mrmovl (%ebp),%ecx      # ecx = Start
+irmovl 12, %edi
+addl %edi, %ebp
+mrmovl (%ebp),%edx     # edx = Count
+xorl %eax,%eax           # sum = 0
+andl %edx,%edx           # Set condition codes
 je End
-Loop:  mrmovq (%ecx),%esi       # get *Start
-addq %esi,%eax           # add to sum
-irmovq $4,%ebx
-addq %ebx,%ecx           # Start++
-irmovq $-1,%ebx
-addq %ebx,%edx           # Count--
+Loop:  mrmovl (%ecx),%esi       # get *Start
+addl %esi,%eax           # add to sum
+irmovl $4,%ebx
+addl %ebx,%ecx           # Start++
+irmovl $1,%ebx
+subl %ebx,%edx           # Count--
 jne Loop                 # Stop when 0
-End:   rrmovq %ebp,%esp
-popq %ebp
+End:   rrmovl %ebp,%esp
+popl %ebp
 ret
 #/* $end sum-ys 0 */
 # The stack starts here and grows to lower addresses
