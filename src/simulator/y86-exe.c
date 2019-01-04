@@ -751,13 +751,13 @@ int condition_satisfied(byte_t zf, byte_t sf, byte_t of, int cond)
 reg_t read_memory(memory_t *mem, int start_loc)
 {
     int i = 0;
-    reg_t value;
+    reg_t value = 0;
 
     for (i = 0; i < 8; ++i)
     {
         byte_t b = mem->contents[start_loc++];
         reg_t tmp = b;
-        tmp = (tmp << i * 8);
+        tmp = tmp << (i * 8);
         value = value | tmp;
     }
 
