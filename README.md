@@ -1,6 +1,6 @@
-# Implementation of Y86 Simulator
-This is a very simple implementation of the Y86 Simulator. It has limited pipelining support, and does not handle any data / instruction hazards in the pipeline. <br>
-The maximum supported memory is 16KB (memory and data inclusive) <br>
+# Y86 Instruction Set Simulator
+This is a very simple implementation of the Y86 Instruction Set Simulator. It has limited pipelining support, and does not handle any data / instruction hazards in the pipeline. <br>
+The maximum supported memory is 16KB (memory and data inclusive). All operaands are 64 bits in size <br>
 
 ## Description
 There are two parts to this: the parser, and the simulator <br>
