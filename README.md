@@ -14,6 +14,13 @@ The simulator program will take the generated ".yo" file as an output, and has o
 * Show the pipeline stage registers
 * Show the contents of the memory
 
+## Prerequisites
+`sudo apt install flex`
+
+## Software
+OS: Ubuntu 18.04 <br>
+GCC version: gcc (Ubuntu 7.3.0-27ubuntu1~18.04) 7.3.0 <br>
+
 ## Building the code
 Run `make` from the trunk folder
 
