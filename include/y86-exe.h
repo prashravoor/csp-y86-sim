@@ -51,8 +51,6 @@ void instruction_memory();
 
 void instruction_write();
 
-void update_pc();
-
 int condition_satisfied(byte_t zf, byte_t sf, byte_t of, int cond);
 
 void set_cond_codes(reg_t valA, reg_t valB, reg_t valE, int type);

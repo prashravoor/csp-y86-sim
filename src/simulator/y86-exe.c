@@ -601,7 +601,6 @@ void instruction_memory()
 void instruction_write()
 {
     pipeline_t *s = &pipeline_registers[P_WB];
-    //pipeline_t *d = &pipeline_registers[P_WB];
 
     if (error)
     {
@@ -620,12 +619,6 @@ void instruction_write()
         printf("WriteBack Stage stalled\n");
         return;
     }
-
-    /*if (d->is_full)
-    {
-        printf("Memory Stage stalled due to WB\n");
-        return;
-    }*/
 
     switch (s->ins_type)
     {
@@ -696,23 +689,7 @@ void instruction_write()
         error = 1;
     }
 
-    /*d->ins_type = s->ins_type;
-    d->func_type = s->func_type;
-    d->regA = s->regA;
-    d->regB = s->regB;
-    d->valA = s->valA;
-    d->valB = s->valB;
-    d->valC = s->valC;
-    d->valE = s->valE;
-    d->valM = s->valM;
-    d->is_full = 1;*/
-
     reset_pipeline(P_WB);
-}
-
-void update_pc()
-{
-    // PC needs to change only when there is a branch
 }
 
 /* Branch logic */

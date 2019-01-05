@@ -212,15 +212,10 @@ int run_program(int steps)
         }
 
         instruction_fetch();
-        // if (!pipeline_enabled) cur_ins++;
         instruction_decode();
-        // if (!pipeline_enabled) cur_ins++;
         instruction_execute();
-        // if (!pipeline_enabled) cur_ins++;
         instruction_memory();
-        // if (!pipeline_enabled) cur_ins++;
         instruction_write();
-        //update_pc();
 
         cycles += 1;
         cur_ins = (cur_ins + 1) % P_ERR;

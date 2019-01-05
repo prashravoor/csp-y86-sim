@@ -7,10 +7,9 @@ INC_DIR=include
 LEX=flex
 YACC=bison
 LEXLIB=-lfl
-LCFLAGS=-02
 
 
-P_SRCFILES = y86-parser isa yas-grammar yas
+P_SRCFILES = isa yas-grammar yas
 P_SRCFILES_TSRC = $(addsuffix .c, $(P_SRCFILES))
 P_SRCFILES_SRC = $(addprefix $(SRC)/parser/, $(P_SRCFILES_TSRC))
 P_OBJDIR = $(OBJDIR)/parser
@@ -33,12 +32,16 @@ LINKS=$(addprefix -l, $(LIBS))
 
 all: setup y86-parser y86-sim
 
-show:
-	echo $(S_SRCFILES_SRC)
-	echo $(S_SRCFILES_OBJ)
-
 setup:
 	mkdir -p $(OBJDIR) $(BINDIR) $(P_OBJDIR) $(S_OBJDIR)
+
+$(SRC)/parser/yas-grammar.c: $(SRC)/parser/yas-grammar.lex
+	$(LEX) $(SRC)/parser/yas-grammar.lex
+	mv lex.yy.c $(SRC)/parser/yas-grammar.c
+    
+$(P_OBJDIR)/yas-grammar.o: $(SRC)/parser/yas-grammar.c
+	$(CC) $(CXXFLAGS) -c $(SRC)/parser/yas-grammar.c 
+	mv yas-grammar.o $(P_OBJDIR)
 
 $(P_OBJDIR)/%.o: $(SRC)/parser/%.c
 	$(CC) $(CXXFLAGS) -c $< -o $@ $(LINKS)
@@ -53,4 +56,5 @@ y86-sim: $(S_SRCFILES_OBJ)
 	$(CC) $(CXXFLAGS) $? -o $(BINDIR)/y86-sim $(LINKS)
 
 clean:
+	rm -f $(SRC)/parser/yas-grammar.c
 	rm -r $(OBJDIR) $(BINDIR)
