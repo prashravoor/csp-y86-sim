@@ -68,12 +68,13 @@ void print_pipeline(int pipe)
         printf("Pipeline Stage: %d\n", pipe);
         printf("Instruction Type: %d, Sub-Type: %d\n",p->ins_type, p->func_type);
         printf("Register A: %d, Register B: %d\n", p->regA, p->regB);
-        printf("Register A Value: %llX, Register B Value: %llX, Offstet: %llX\n", p->valA, p->valB, p->valE);
+        printf("Register A Value: %llX, Register B Value: %llX, Offset: %llX\n", p->valA, p->valB, p->valE);
         printf("Intermediates: ValM: %llX\n\n", p->valM);
     }
 }
 
 int error = 0;
+int complete = 0;
 extern int cur_ins;
 extern simulator_t simulator;
 
@@ -106,6 +107,7 @@ void instruction_fetch()
     if (0 == code)
     {
         printf("Reached end of instructions\n");
+        complete = 1;
         return;
     }
 

@@ -134,6 +134,9 @@ void initialize_memory(memory_t *ptr, int size)
     ptr->max = size;
     ptr->size = 0;
     ptr->cur = 0;
+
+    // Initialize Stack Pointer to 0x3000
+    simulator.registers[R_RSP] = 0x3000;
 }
 
 void load()
@@ -193,13 +196,14 @@ void startExec()
 }
 
 extern int error;
+extern int complete;
 int run_program(int steps)
 {
     int cycles = 0;
     int cur_steps = 0;
 
     // Start execution
-    while (instructions->cur < instructions->size && cur_steps++ < steps)
+    while ((instructions->cur < instructions->size && cur_steps++ < steps) && !complete)
     {
         if (error)
         {
@@ -208,20 +212,21 @@ int run_program(int steps)
         }
 
         instruction_fetch();
-        //if (!pipeline_enabled) cur_ins++;
+        // if (!pipeline_enabled) cur_ins++;
         instruction_decode();
-        //if (!pipeline_enabled) cur_ins++;
+        // if (!pipeline_enabled) cur_ins++;
         instruction_execute();
-        //if (!pipeline_enabled) cur_ins++;
+        // if (!pipeline_enabled) cur_ins++;
         instruction_memory();
-        //if (!pipeline_enabled) cur_ins++;
+        // if (!pipeline_enabled) cur_ins++;
         instruction_write();
         //update_pc();
+
         cycles += 1;
         cur_ins = (cur_ins + 1) % P_ERR;
     }
 
-    if(instructions->cur >= instructions->size)
+    if(complete || instructions->cur >= instructions->size)
     {
         printf("Program Execution Complete!\n");
         reset_pipeline(P_IF);

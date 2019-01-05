@@ -1,0 +1,28 @@
+irmovl $13, %eax
+irmovl $17, %ebx
+# Multiply ax * bx
+
+# Dummy value in EDX to demonstrate register value saving
+irmovl $200, %edx
+call main
+halt
+
+main:
+# Save registers 
+pushl %edx
+pushl %ecx
+
+rrmovl %eax, %edx
+
+irmovl $1, %ecx
+subl %ecx, %ebx
+loop:
+addl %edx, %eax
+subl %ecx, %ebx
+jne loop
+
+# Restore registers
+popl %ecx
+popl %edx
+ret
+

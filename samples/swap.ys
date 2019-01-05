@@ -1,0 +1,8 @@
+irmovl $251, %eax
+irmovl $99, %ebx
+
+xorl %eax, %ebx
+xorl %ebx, %eax
+xorl %eax, %ebx
+
+
